@@ -1,6 +1,3 @@
-/**
- * alloc.c: Prompts the user to allocate resources.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -15,19 +12,37 @@
 
 const char *FILENAME = "resources.txt";
 
-/**
- * Open a file, map it to a memory region with mmap, and continuously ask the
- * user whether to allocate more resources.
- */
-int main(void)
+void quit()
 {
+  printf("Use \"take\" as the first argument to take resources, and use \"prov\" to provide resources.\n");
+  exit(1);
+}
+
+/**
+ * Open a file, map it to a memory region with mmap(2), and continuously ask whether
+ * to allocate/provide more resources.
+ */
+int main(int argc, char *argv[])
+{
+  if (argc < 2) {
+    quit();
+  }
+
+  int is_taker = strcmp("take", argv[1]) == 0;
+  int is_provider = strcmp("prov", argv[1]) == 0;
+  const char *verb = is_taker ? "Take" : "Provide";
+
+  if (!is_taker && !is_provider) {
+    quit();
+  }
+
   int fd;
   struct stat sb;
   off_t pa_offset;
   char *addr;
-  char allocate_more;
+  char answer;
   int resource;
-  int needed;
+  int amount;
 
   int sem_set_id;
   union semun {
@@ -73,32 +88,43 @@ int main(void)
   }
 
   while (1) {
-    printf("Allocate more resources? (y/n) ");
-    scanf(" %c", &allocate_more);
-    if (allocate_more == 'y') {
+    printf("%s more resources? (y/n) ", verb);
+    scanf(" %c", &answer);
 
-      printf("Enter the resource number and number of resources needed: ");
-      scanf("%d %d", &resource, &needed);
+    if (answer == 'y') {
+      const char *prompt = "Enter the resource number and number of";
+      if (is_taker) {
+        printf("%s resources needed: ", prompt);
+      } else {
+        printf("%s additional resources to be provided: ", prompt);
+      }
+      scanf("%d %d", &resource, &amount);
 
       /* Restart if a negative resource number or negative resource amount
       is entered. */
-      if (resource < 0 || needed < 0) {
+      if (resource < 0 || amount < 0) {
         continue;
       }
 
-      /* Subtract units from resource type if available. Assuming the
-      resources in the file are in order, we can multiply the resource number
-      times 4 and then add 2 to get the index of the amount of that resource
-      in the character array at the address returned by mmap. */
-      int num_resources_left = (addr[(4 * resource) + 2] - '0') - needed;
-      if (num_resources_left >= 0) {
+      /* Subtract/add units from/to resource type. Assuming the resources in
+      the file are in order, we can multiply the resource number times 4 and
+      then add 2 to get the index of the amount of that resource in the
+      character array at the address returned by mmap. */
+      int result = (addr[(4 * resource) + 2] - '0');
 
+      if (is_taker) {
+        result -= amount;
+      } else {
+        result += amount;
+      }
+
+      if (result >= 0 && result <= 9) {
         sem_op.sem_num = 0;
         sem_op.sem_op = -1;
         sem_op.sem_flg = 0;
         semop(sem_set_id, &sem_op, 1);
 
-        addr[(4 * resource) + 2] = num_resources_left + '0';
+        addr[(4 * resource) + 2] = result + '0';
 
         int sync = msync(addr, sb.st_size - pa_offset, MS_SYNC);
 

@@ -4,15 +4,11 @@ RM = rm -f
 
 CFLAGS = -Wall -Werror -ggdb -funroll-loops
 
-all: alloc prov-rep
+all: demo
 
-alloc: alloc.c
-	@$(ECHO) Compiling alloc
-	@$(CC) $(CFLAGS) -o alloc.out alloc.c
-
-prov-rep: prov-rep.c
-	@$(ECHO) Compiling prov-rep
-	@$(CC) $(CFLAGS) -o prov-rep.out prov-rep.c
+alloc: demo.c
+	@$(ECHO) Compiling demo
+	@$(CC) $(CFLAGS) -o demo.out demo.c
 
 .PHONY: all clean
 

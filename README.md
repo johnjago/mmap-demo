@@ -1,6 +1,6 @@
 # mmap-demo
 
-Programs to demonstrate memory-mapped files in Unix.
+A program to demonstrate memory-mapped files using the mmap(2) system call in Unix.
 
 ## Build
 
@@ -10,13 +10,50 @@ make
 
 ## Usage
 
-Run alloc.out and follow the prompts to allocate resources (subtract from)
-resources.txt. Run provide.out in another terminal to provide more resources to
-resources.txt. provide.out also prints out status information every ten seconds in a
-child process.
+To take resources (from resources.txt):
 
-Note that you'll have to kill the child process by hand to stop provide.out from
-printing.
+```
+./demo.out take
+```
+
+To provide resources (to resources.txt):
+
+```
+./demo.out prov
+```
+
+Follow the prompts to either take or provide resources. The file will be updated
+in memory and then synced to the disk. When asked for the resource number and
+number of resources, separate the two with a space.
+
+### Example
+
+resources.txt before:
+
+```
+0	0
+1	9 <-----
+2	6
+3	3
+4	0
+```
+
+```
+$ ./alloc.out take
+Take more resources? (y/n) y
+Enter the resource number and number of resources needed: 1 1
+Synced successfully.
+```
+
+resources.txt after:
+
+```
+0	0
+1	8 <-----
+2	6
+3	3
+4	0
+```
 
 ## License
 
