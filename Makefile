@@ -6,7 +6,7 @@ CFLAGS = -Wall -Werror -ggdb -funroll-loops
 
 all: demo
 
-alloc: demo.c
+demo: demo.c
 	@$(ECHO) Compiling demo
 	@$(CC) $(CFLAGS) -o demo.out demo.c
 
